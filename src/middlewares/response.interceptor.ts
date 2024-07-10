@@ -5,9 +5,11 @@ import { Injectable, NestInterceptor, CallHandler, ExecutionContext, HttpStatus 
 
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
+  constructor(private message?: string) {}
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const res: Response = context.switchToHttp().getResponse();
     res.statusCode = res.statusCode === HttpStatus.CREATED ? HttpStatus.OK : res.statusCode;
-    return next.handle().pipe(map((data: any) => ({ code: res.statusCode, message: "请求成功", data })));
+    return next.handle().pipe(map((data: any) => ({ code: res.statusCode, message: this.message || "请求成功", data })));
   }
 }

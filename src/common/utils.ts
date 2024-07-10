@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-import { FindOptionsOrder, FindOptionsWhere, Repository } from "typeorm";
+import { FindOptionsOrder, FindOptionsSelect, FindOptionsSelectByString, FindOptionsWhere, Repository } from "typeorm";
 import { PageDto } from "./dto/page.dto";
 import { PageOutput } from "./output/page.output";
 import { createHash } from "crypto";
@@ -42,10 +42,12 @@ export async function buildPage<T, Tdto extends PageDto>(
     format?: (val: T[]) => Promise<T[]>;
     where?: FindOptionsWhere<T> | FindOptionsWhere<T>[];
     order?: FindOptionsOrder<T>;
+    select?: FindOptionsSelect<T> | FindOptionsSelectByString<T>;
   }
 ): Promise<PageOutput<T>> {
   const { page: skip, pageSize: take, where: _where = {}, order: _order = {} } = pageDto || ({} as any);
 
+  const select = (input || {}).select;
   const cover = (input || {}).cover;
   const inputWhere = (input || {}).where;
   const inputOrder = (input || {}).order;
@@ -56,6 +58,7 @@ export async function buildPage<T, Tdto extends PageDto>(
     order,
     where,
     take,
+    select,
     skip: (skip - 1) * take
   });
 
@@ -63,6 +66,11 @@ export async function buildPage<T, Tdto extends PageDto>(
   return { items, totalCount, hasNextPage: hasNextPage(skip, take, totalCount) };
 }
 
+/**
+ * @description: 结构字符串json，容错处理
+ * @param {string} val
+ * @return {*}
+ */
 export const formatJson = (val: string): { [key: string]: string } => {
   let obj: { [key: string]: string } = {};
 
@@ -80,15 +88,28 @@ export const formatJson = (val: string): { [key: string]: string } => {
  * @param content
  * @param algorithm
  */
-export const encrypt = (content: string, algorithm: string) => {
+export const encrypt = (content: string, algorithm: string): string => {
   const hash = createHash(algorithm);
   hash.update(content);
   return hash.digest("hex");
 };
 
-export const md5 = (content: string) => encrypt(content, "md5");
+/**
+ * @description: 加密
+ * @param {string} content
+ * @return {*}
+ */
+export const md5 = (content: string): string => encrypt(content, "md5");
 
-export function getDistance(lat1, lng1, lat2, lng2) {
+/**
+ * @description: 获取2个坐标之间的距离
+ * @param {*} lat1
+ * @param {*} lng1
+ * @param {*} lat2
+ * @param {*} lng2
+ * @return {*}
+ */
+export function getDistance(lat1, lng1, lat2, lng2): number {
   const radLat1 = (lat1 * Math.PI) / 180.0;
   const radLat2 = (lat2 * Math.PI) / 180.0;
   const a = radLat1 - radLat2;
@@ -99,6 +120,11 @@ export function getDistance(lat1, lng1, lat2, lng2) {
   return s;
 }
 
+/**
+ * @description: 等待
+ * @param {number} ms
+ * @return {*}
+ */
 export function sleep(ms: number): Promise<any> {
   return new Promise(resolve => setTimeout(resolve, Number(ms)));
 }
@@ -125,14 +151,30 @@ export function generateOrderNo(prefix: string = ""): string {
   return prefix + datestring + randomString1 + randomString2;
 }
 
+/**
+ * @description: 通过值取key
+ * @param {T} enumObject
+ * @param {T} value
+ * @return {*}
+ */
 export function getKeyByValue<T extends { [index: string]: string | number }>(enumObject: T, value: T[keyof T]): keyof T | null {
   const keys = Object.keys(enumObject).filter(key => enumObject[key] === value);
   return keys.length > 0 ? keys[0] : null;
 }
 
+/**
+ * @description: 转秒数
+ * @param {number} val
+ * @return {*}
+ */
 export const toSecond = (val: number): number => (val || 0) * 1000;
 
-export function generateRedisSecret(leng: number = 10) {
+/**
+ * @description: 生成随机密钥
+ * @param {number} leng
+ * @return {*}
+ */
+export function generateSecret(leng: number = 10) {
   let token = "";
   const chars = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz23456789";
 
@@ -149,7 +191,7 @@ export function generateRedisSecret(leng: number = 10) {
  * @param {boolean} cover 代表是否是覆盖，覆盖就是从{day}天前到今日，反之就是多少天前当天
  * @return {*}
  */
-export function getDayliy(day: number = 0, cover?: boolean) {
+export function getDayliy(day: number = 0, cover?: boolean): [Date, Date] {
   const currentDate = new Date();
   currentDate.setDate(currentDate.getDate() - day);
   const startDate = new Date(currentDate);
@@ -161,7 +203,12 @@ export function getDayliy(day: number = 0, cover?: boolean) {
   return [startDate, endDate];
 }
 
-export function getMonthly(month: number = 0) {
+/**
+ * @description:
+ * @param {number} month 多少月前
+ * @return {*}
+ */
+export function getMonthly(month: number = 0): [Date, Date] {
   const currentDate = new Date();
   currentDate.setMonth(currentDate.getMonth() - month);
   currentDate.setDate(1);
@@ -175,6 +222,11 @@ export function getMonthly(month: number = 0) {
   return [startDate, endDate];
 }
 
+/**
+ * @description: 生成随机密码
+ * @param {number} len
+ * @return {*}
+ */
 export function genPass(len: number = 4): string {
   let text = "";
   for (let i = 0; i < len; i++) {
@@ -184,6 +236,11 @@ export function genPass(len: number = 4): string {
   return text;
 }
 
+/**
+ * @description: 通过头部URL获取token
+ * @param {string} val
+ * @return {*}
+ */
 export const getToken = (val: string): string => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const query = require("url").parse(val || "{}", true).query;
@@ -194,11 +251,65 @@ export const getToken = (val: string): string => {
   return authorizationParam.split("$$")[1];
 };
 
-export function getRandomIndex(array: any[]) {
+/**
+ * @description: 生成数组的随机下标
+ * @param {any} array
+ * @return {*}
+ */
+export function getRandomIndex(array: any[]): number {
   const arrayLength = array.length;
   if (arrayLength === 0) {
     throw new Error("Array is empty");
   }
   const randomIndex = Math.floor(Math.random() * arrayLength);
   return randomIndex;
+}
+
+/**
+ * 格式化日期
+ * @param date
+ * @param fmt
+ * @returns
+ */
+export function formatDate(date: Date = new Date(), fmt: string = "yyyy-MM-dd hh:mm:ss"): string {
+  const o: any = {
+    "M+": date.getMonth() + 1, //月份
+    "d+": date.getDate(), //日
+    "h+": date.getHours(), //小时
+    "m+": date.getMinutes(), //分
+    "s+": date.getSeconds(), //秒
+    "q+": Math.floor((date.getMonth() + 3) / 3), //季度
+    S: date.getMilliseconds() //毫秒
+  };
+  if (/(y+)/.test(fmt)) {
+    fmt = fmt.replace(RegExp.$1, (date.getFullYear() + "").substr(4 - RegExp.$1.length));
+  }
+  for (const k in o) {
+    if (new RegExp("(" + k + ")").test(fmt)) {
+      fmt = fmt.replace(RegExp.$1, RegExp.$1.length == 1 ? o[k] : ("00" + o[k]).substr(("" + o[k]).length));
+    }
+  }
+  return fmt;
+}
+
+/**
+ * @description: 生成随机ID 默认9位
+ * @return {*}
+ */
+const randomNumRes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+export function genRandomNo(length: number = 9, arr: number[] = randomNumRes): string {
+  const result = [];
+  const availableNumbers = [...arr];
+
+  for (let i = 0; i < length; i++) {
+    const index = Math.floor(Math.random() * availableNumbers.length);
+    result.push(availableNumbers[index]);
+    availableNumbers.splice(index, 1);
+
+    if (availableNumbers.length === 0) {
+      availableNumbers.push(...arr);
+    }
+  }
+
+  return result.join("");
 }
