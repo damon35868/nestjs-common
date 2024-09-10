@@ -1,12 +1,9 @@
+import { createCipheriv, createHash } from "crypto";
 import { config } from "dotenv";
-import { FindOptionsOrder, FindOptionsSelect, FindOptionsSelectByString, FindOptionsWhere, Repository } from "typeorm";
-import { PageDto } from "./dto/page.dto";
-import { PageOutput } from "./output/page.output";
-import { createHash } from "crypto";
 config({ path: process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : ".env" });
 
 /**
- * @description: 获取环境变了 env
+ * @description: 获取环境变量 env
  * @param {string} key
  * @param {string} defaultVal
  * @return {*}
@@ -18,56 +15,7 @@ export const env = (key: string, defaultVal?: string): string => {
 };
 
 /**
- * @description: 是否具备更多分页
- * @param {number} skip
- * @param {number} take
- * @param {number} total
- * @return {*}
- */
-export function hasNextPage(skip: number, take: number, total: number): boolean {
-  return skip * take < total;
-}
-
-/**
- * @description: 构建分页数据
- * @param {Repository<T>} repository
- * @param {PageDto} pageDto
- * @return {*}
- */
-export async function buildPage<T, Tdto extends PageDto>(
-  repository: Repository<T>,
-  pageDto: Tdto,
-  input?: {
-    cover?: boolean;
-    format?: (val: T[]) => Promise<T[]>;
-    where?: FindOptionsWhere<T> | FindOptionsWhere<T>[];
-    order?: FindOptionsOrder<T>;
-    select?: FindOptionsSelect<T> | FindOptionsSelectByString<T>;
-  }
-): Promise<PageOutput<T>> {
-  const { page: skip, pageSize: take, where: _where = {}, order: _order = {} } = pageDto || ({} as any);
-
-  const select = (input || {}).select;
-  const cover = (input || {}).cover;
-  const inputWhere = (input || {}).where;
-  const inputOrder = (input || {}).order;
-  const where = cover ? inputWhere : { ..._where, ...inputWhere };
-  const order = cover ? inputOrder : { ..._order, ...inputOrder };
-
-  const [list, totalCount] = await repository.findAndCount({
-    order,
-    where,
-    take,
-    select,
-    skip: (skip - 1) * take
-  });
-
-  const items = input?.format ? await input?.format(list) : list;
-  return { items, totalCount, hasNextPage: hasNextPage(skip, take, totalCount) };
-}
-
-/**
- * @description: 结构字符串json，容错处理
+ * @description: 解构字符串json，容错处理
  * @param {string} val
  * @return {*}
  */
@@ -100,6 +48,46 @@ export const encrypt = (content: string, algorithm: string): string => {
  * @return {*}
  */
 export const md5 = (content: string): string => encrypt(content, "md5");
+
+/*
+ * @description: 对象组合排序
+ * @param {object} options
+ * @return {*}
+ */
+export function kSort(options: { [key: string]: any }) {
+  const sorted = {};
+  const keys = Object.keys(options).sort();
+  keys.forEach(key => (sorted[key] = options[key]));
+  return sorted;
+}
+
+/**
+ * @description: sha1签名
+ * @param {string} content
+ * @return {*}
+ */
+export const sha1 = (content: string) => encrypt("sha1", content);
+
+/**
+ * @description: sha256签名
+ * @param {string} content
+ * @return {*}
+ */
+export const sha256 = (content: string) => encrypt("sha256", content);
+
+/**
+ * @description: aes签名
+ * @param {any} data
+ * @param {string} key
+ * @param {string} iv
+ * @return {*}
+ */
+export const aesEncrypt = (data: any, key: string, iv: string) => {
+  const cipher = createCipheriv("aes-128-cbc", Buffer.from(key), Buffer.from(iv));
+  let crypted = cipher.update(data, "utf8", "base64");
+  crypted += cipher.final("base64");
+  return crypted;
+};
 
 /**
  * @description: 获取2个坐标之间的距离
@@ -174,7 +162,7 @@ export const toSecond = (val: number): number => (val || 0) * 1000;
  * @param {number} leng
  * @return {*}
  */
-export function generateSecret(leng: number = 10) {
+export function generateSecret(leng: number = 10, encryption: boolean = true) {
   let token = "";
   const chars = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz23456789";
 
@@ -182,7 +170,7 @@ export function generateSecret(leng: number = 10) {
     token += chars.charAt(Math.floor(Math.random() * chars.length));
   }
 
-  return md5(token);
+  return encryption ? md5(token) : token;
 }
 
 /**
