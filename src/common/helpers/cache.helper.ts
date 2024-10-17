@@ -6,11 +6,11 @@ import { TtlFunction } from "cache-manager";
 export class CacheHelper {
   constructor(@Inject(CACHE_MANAGER) private cacheManger: Cache) {}
 
-  async remember(key: string, fn: () => Promise<any>, ttl: number | TtlFunction = 3600) {
-    const cache = await this.cacheManger.get(key);
+  async remember<T>(key: string, fn: () => Promise<T>, ttl: number | TtlFunction = 3600): Promise<T> {
+    const cache: T = await this.cacheManger.get(key);
     if (cache) return cache;
 
-    const value = await fn();
+    const value: T = await fn();
     this.cacheManger.set(key, value, { ttl });
     return value;
   }
