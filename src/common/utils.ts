@@ -162,15 +162,15 @@ export const toSecond = (val: number): number => (val || 0) * 1000;
  * @param {number} leng
  * @return {*}
  */
-export function generateSecret(leng: number = 10, encryption: boolean = true) {
+export function generateSecret(leng: number = 10, encryption: boolean = true, toUpperCase?: boolean) {
   let token = "";
   const chars = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz23456789";
 
   for (let i = 0; i < leng; ++i) {
     token += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-
-  return encryption ? md5(token) : token;
+  const secret = encryption ? md5(token) : token;
+  return toUpperCase ? secret.toUpperCase() : secret;
 }
 
 /**

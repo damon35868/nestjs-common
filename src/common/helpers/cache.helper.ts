@@ -14,4 +14,25 @@ export class CacheHelper {
     this.cacheManger.set(key, value, { ttl });
     return value;
   }
+
+  async forget(key): Promise<boolean> {
+    try {
+      await this.cacheManger.del(key);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  set(key: string, value: any): Promise<any> {
+    return this.cacheManger.set(key, value);
+  }
+
+  get<T>(key: string): Promise<T> {
+    return this.cacheManger.get(key);
+  }
+
+  reset(): Promise<any> {
+    return this.cacheManger.reset();
+  }
 }

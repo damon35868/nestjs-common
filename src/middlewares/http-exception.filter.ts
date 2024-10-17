@@ -8,12 +8,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response: Response = ctx.getResponse();
-    const status = exception.getStatus ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    const status = exception.getStatus || exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const res: any = exception.getResponse ? exception?.getResponse() : {};
-    const msg = res?.message || exception.message;
+    const msg = res?.message || exception?.message;
 
-    const message = msg ? msg : status >= HttpStatus.INTERNAL_SERVER_ERROR ? "Internal server error" : "Bad request";
+    const message = msg ? msg : status >= HttpStatus.INTERNAL_SERVER_ERROR ? "服务器错误 Internal server error" : "客户端错误 Bad request";
 
     response.status(status);
     response.header("Content-Type", "application/json; charset=utf-8");
