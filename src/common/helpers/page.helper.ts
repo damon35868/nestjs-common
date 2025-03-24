@@ -2,7 +2,7 @@ import { FindOptionsOrder, FindOptionsSelect, FindOptionsSelectByString, FindOpt
 import { PageDto } from "../dto/page.dto";
 import { PageOutput } from "../output/page.output";
 
-class PageHelper {
+export class PageHelper {
   /**
    * @description: 是否具备更多分页
    * @param {number} skip
@@ -10,7 +10,7 @@ class PageHelper {
    * @param {number} total
    * @return {*}
    */
-  hasNextPage(skip: number, take: number, total: number): boolean {
+  static hasNextPage(skip: number, take: number, total: number): boolean {
     return skip * take < total;
   }
 
@@ -20,7 +20,7 @@ class PageHelper {
    * @param {PageDto} pageDto
    * @return {*}
    */
-  async buildPage<T, Tdto extends PageDto>(
+  static async buildPage<T, Tdto extends PageDto>(
     repository: Repository<T>,
     pageDto: Tdto,
     input?: {
@@ -52,5 +52,3 @@ class PageHelper {
     return { items, totalCount, hasNextPage: this.hasNextPage(skip, take, totalCount) };
   }
 }
-
-export const pageHelper = new PageHelper();
