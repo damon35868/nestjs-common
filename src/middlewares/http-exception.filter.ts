@@ -3,7 +3,7 @@ import { Response } from "express";
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger();
+  constructor(private log: boolean = true) {}
 
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -19,6 +19,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     response.header("Content-Type", "application/json; charset=utf-8");
     response.send({ code: status, message });
 
-    status !== HttpStatus.UNAUTHORIZED && this.logger.error({ code: status, message });
+    if (this.log) {
+      status !== HttpStatus.UNAUTHORIZED && Logger.error({ code: status, message });
+    }
   }
 }

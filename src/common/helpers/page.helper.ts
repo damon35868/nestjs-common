@@ -31,7 +31,7 @@ export class PageHelper {
       select?: FindOptionsSelect<T> | FindOptionsSelectByString<T>;
     }
   ): Promise<PageOutput<T>> {
-    const { page: skip, pageSize: take, where: _where = {}, order: _order = {} } = pageDto || ({} as any);
+    const { page: skip = 1, pageSize: take = 10, where: _where = {}, order: _order = {} } = pageDto || ({} as any);
 
     const select = (input || {}).select;
     const cover = (input || {}).cover;
@@ -40,13 +40,7 @@ export class PageHelper {
     const where = cover ? inputWhere : { ..._where, ...inputWhere };
     const order = cover ? inputOrder : { ..._order, ...inputOrder };
 
-    const [list, totalCount] = await repository.findAndCount({
-      order,
-      where,
-      take,
-      select,
-      skip: (skip - 1) * take
-    });
+    const [list, totalCount] = await repository.findAndCount({ order, where, take, select, skip: (skip - 1) * take });
 
     const items = input?.format ? await input?.format(list) : list;
     return { items, totalCount, hasNextPage: this.hasNextPage(skip, take, totalCount) };

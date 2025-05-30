@@ -83,7 +83,7 @@ export const sha256 = (content: string) => encrypt("sha256", content);
  * @return {*}
  */
 export const aesEncrypt = (data: any, key: string, iv: string) => {
-  const cipher = createCipheriv("aes-128-cbc", Buffer.from(key), Buffer.from(iv));
+  const cipher = createCipheriv("aes-128-cbc", Uint8Array.from(Buffer.from(key)), Uint8Array.from(Buffer.from(iv)));
   let crypted = cipher.update(data, "utf8", "base64");
   crypted += cipher.final("base64");
   return crypted;
