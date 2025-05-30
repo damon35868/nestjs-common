@@ -2,6 +2,7 @@ export * from "./dto/json.rule";
 export * from "./dto/page.dto";
 export * from "./event";
 export * from "./helpers/cache.helper";
+export * from "./helpers/helper.module";
 export * from "./helpers/page.helper";
 export * from "./output/base.output";
 export * from "./output/page.output";
