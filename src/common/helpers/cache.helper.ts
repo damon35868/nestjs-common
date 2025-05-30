@@ -1,17 +1,17 @@
-import { Cache, CACHE_MANAGER } from "@nestjs/cache-manager";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Inject, Injectable } from "@nestjs/common";
-import { TtlFunction } from "cache-manager";
+import { Cache } from "cache-manager";
 
 @Injectable()
 export class CacheHelper {
   constructor(@Inject(CACHE_MANAGER) private cacheManger: Cache) {}
 
-  async remember<T>(key: string, fn: () => Promise<T>, ttl: number | TtlFunction = 3600): Promise<T> {
+  async remember<T>(key: string, fn: () => Promise<T>, ttl: number = 1800000): Promise<T> {
     const cache: T = await this.cacheManger.get(key);
     if (cache) return cache;
 
     const value: T = await fn();
-    this.cacheManger.set(key, value, { ttl });
+    this.cacheManger.set(key, value, ttl);
     return value;
   }
 
@@ -33,6 +33,6 @@ export class CacheHelper {
   }
 
   reset(): Promise<any> {
-    return this.cacheManger.reset();
+    return this.cacheManger.clear();
   }
 }
