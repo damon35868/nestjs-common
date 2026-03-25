@@ -1,3 +1,4 @@
+export * from "./business-exception";
 export * from "./dto/json.rule";
 export * from "./dto/page.dto";
 export * from "./event";

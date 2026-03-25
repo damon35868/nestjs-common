@@ -5,11 +5,17 @@ import { map } from "rxjs/operators";
 
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
-  constructor(private message?: string) {}
+  constructor(
+    private message?: string,
+    private codeType: "business" | "http" = "business"
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const res: Response = context.switchToHttp().getResponse();
-    res.statusCode = res.statusCode === HttpStatus.CREATED ? HttpStatus.OK : res.statusCode;
-    return next.handle().pipe(map((data: any) => ({ code: res.statusCode, message: this.message || "请求成功", data })));
+    res.statusCode = res?.statusCode === HttpStatus.CREATED ? HttpStatus.OK : res.statusCode;
+
+    return next
+      .handle()
+      .pipe(map((data: any) => ({ code: this.codeType === "business" ? 0 : res.statusCode, message: this.message || "请求成功", data })));
   }
 }
